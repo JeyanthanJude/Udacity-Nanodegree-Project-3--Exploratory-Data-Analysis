@@ -1,4 +1,4 @@
-# Udacity-Nanodegree-Project-3--Exploratory-Data-Analysis
+# Exploratory Data Analysis
 
 ## Summary
 In this project, exploratory data analysis techniques were used to explore relationships between variables through R programming Language. Univariate, Bivariate and Multivariate analysis was carried out. Various plots were used to understand the distribution and ranges of data. Finally a good understanding of data was acquired before any rigorous analysis could be carried out.

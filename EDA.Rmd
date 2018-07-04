@@ -1,0 +1,559 @@
+
+```{r,echo=FALSE, message=FALSE, warning=FALSE, packages}
+library(ggplot2)
+library(gridExtra)
+library(dplyr)
+library(memisc)
+library(GGally)
+```
+
+#Red wine analysis
+
+Exploratory data analysis of the red wine dataset has been conducted and the insights have been reported. The dataset holds information about the red vairent of the Portuguese "Vinho Verde" wine.
+
+
+#Univariate Plots Section
+
+The data has been loaded into the dataframe red.wine. It contains 1599 observations with 13 variables.
+
+```{r,echo=FALSE,warning=FALSE, message=FALSE}
+setwd("C:/Users/admin/Desktop/eda-course-materials/lesson2")
+red.wine <- read.csv('wineQualityReds.csv')
+```
+The various variables present in the dataframe can be found below
+
+```{r,echo=FALSE,warning=FALSE}
+names(red.wine)
+```
+Let us look into these variables using plots.
+
+```{r,echo=FALSE,warning=FALSE, message=FALSE}
+p1<-ggplot(aes(x=red.wine$fixed.acidity),data= red.wine) +
+  geom_histogram()+
+  scale_x_continuous(breaks=seq(0,14,0.5),limits = c(4,14))+
+  xlab('Fixed Acidity (g / dm^3)')
+
+p2<-ggplot(aes(x=red.wine$volatile.acidity),data = red.wine)+
+  geom_histogram(binwidth = 0.05)+
+  scale_x_continuous(breaks=seq(0,1,0.05),limits = c(0,1))+
+  xlab('Volatile ACidity (g / dm^3)')
+
+grid.arrange(p1,p2,ncol=1)
+```
+
+The fixed.acidity measures the quantity of non volatile acids in the wine while the variable volatile.acidity measures the amount of volatile acids.Looking at the plots of the two variables above it is clear that most red wines from the dataset have a fixed acidity between 6 and 10.5 g / dm^3 and voltaile acidity between 0.25 and 0.75 g/dm^3. The graphs almost follows the shape of a normal distribution.
+
+
+```{r,echo=FALSE,warning=FALSE, message=FALSE}
+ggplot(aes(x=red.wine$citric.acid),data=red.wine)+
+  geom_histogram(binwidth=0.01)+
+  scale_x_continuous(breaks=seq(0,0.6,0.05),limits=c(-0.1,0.6))+
+  xlab('Citric Acid (g / dm^3)')
+```
+
+The citric acid plot reveals a sharp peak at the start where the amount is less than 0.02 g/dm^3. There occurs another peak at around 0.5 g/dm^3 where the count exceeds 50.
+
+
+
+```{r,echo=FALSE,warning=FALSE, message=FALSE}
+  ggplot(aes(x=red.wine$residual.sugar),data=red.wine)+
+  geom_histogram(binwidth = 0.2)+
+  scale_x_continuous(limits = c(0,4),breaks = seq(0,4,0.25))+
+  xlab('Resuidal Sugar (g / dm^3)')
+
+summary(red.wine$residual.sugar)
+
+```
+
+The resuidal sugar plot seems to be normally distributed with bulk of the data lying between 1.5 and 2.75 g/dm^3.The outliers have been ignored.
+The mean is 2.539 g/dm^3 for the entire dataset.On ignoring all the values beyond the 95th percentile, the mean drops to 2.274 g/dm^3 and the maximum value is 5 g/dm^3.
+
+
+```{r,echo=FALSE,warning=FALSE, message=FALSE}
+d<-subset(red.wine,chlorides<quantile(red.wine$chlorides,0.95))
+
+
+ggplot(aes(x=chlorides),data=d)+
+  geom_histogram(binwidth = 0.01)+
+  scale_x_continuous(breaks=seq(0,0.2,0.01),limits=c(0,0.2))+
+  xlab('Cholrides (g / dm^3)')
+summary(d$chlorides)
+```
+
+The chloride contents range from 0.06 to 0.1 g/dm^3 for most wines in the dataset. The graph above shows count for all chloride values under the 95th percentile.
+
+```{r,echo=FALSE,warning=FALSE, message=FALSE}
+p3<-ggplot(aes(x=free.sulfur.dioxide),data=red.wine)+
+  geom_histogram(binwidth = 1)+
+  xlab('Free Sulphur dioxide (mg / dm^3)')
+
+p4<-ggplot(aes(x=red.wine$total.sulfur.dioxide),data=red.wine)+
+  geom_histogram(binwidth = 2)+
+  xlab('Total Sulphur dioxide (mg / dm^3)')
+
+red.wine$free.sulfur.dioxide.proportion<- red.wine$free.sulfur.dioxide/red.wine$total.sulfur.dioxide
+
+p5<-ggplot(aes(x=red.wine$free.sulfur.dioxide.proportion),data=red.wine)+
+  geom_histogram()+
+  xlab('Free Sulphur Dioxide Proportion (mg / dm^3)')
+
+grid.arrange(p3,p4,p5,ncol=3)
+
+summary(red.wine$free.sulfur.dioxide)
+summary(red.wine$total.sulfur.dioxide)
+summary(red.wine$free.sulfur.dioxide.proportion)
+```
+
+Both the free SO2 and total SO2 graphs seem to be positively skewed. On finding the proportion of free sulphur dioxide in total sulphur dioxide and plotting the resulting proportions, we find that the values are normally distributed.
+
+```{r,echo=FALSE,warning=FALSE, message=FALSE}
+ggplot(aes(x=red.wine$density),data=red.wine)+
+  geom_histogram()+
+  xlab('Density (g / cm^3)')
+
+ggplot(aes(x=red.wine$pH),data=red.wine)+
+  geom_histogram()+
+  xlab('pH')
+
+ggplot(aes(x=red.wine$sulphates),data=red.wine)+
+  geom_histogram()+
+  xlab('Sulphates (g / dm^3)')
+```
+
+The density,pH,Sulphtes plots follow a normal distribution. Most of the alcohols lie in the pH range of 3 and 3.5 on the pH scale.Sulphate mostly ranges between 0.5 and 1.0 g/dm^3.
+
+
+```{r,echo=FALSE,warning=FALSE, message=FALSE}
+ggplot(aes(x=red.wine$alcohol),data=red.wine)+
+  geom_histogram(binwidth = 0.2)+
+  scale_x_continuous(breaks = seq(8,15,0.4))+
+  xlab('Alcohol Percent (% by volume)')
+  
+summary(red.wine$alcohol)
+ 
+# Cutting alcohol variable into buckets. 
+red.wine$alcohol.range <- cut(red.wine$alcohol,breaks=c(8,10,12,15),right = TRUE)
+
+#No. of wines in each alcohol range  
+table(red.wine$alcohol.range)
+  
+```
+
+The max alcohol % is 14.9% and the minimum being 8.4%. There is a huge spike in the number of wines with an alcoholic percent around 9.4. The alcohol percents have been grouped into three ranges. They are 8-10% , 10-12% , 12-15%. 
+
+```{r,echo=FALSE,warning=FALSE, message=FALSE}
+red.wine$quality<-factor(red.wine$quality)
+
+ggplot(aes(x=red.wine$quality),data=red.wine)+
+  geom_histogram(stat='count')+
+  xlab('Quality')
+```
+
+The quality of wines have been converted into a factor variable. As visible from the histogram, most wines are of the medium quality(5 & 6). A very few wines touch the lower and higher quality ranges.
+
+It will be interesting to analyze what makes the red wine, good or bad
+
+# Univariate Analysis
+
+### What is the structure of your dataset?
+
+The data set contains 13 variables with 1599 observations. One of the varable is the numbering used in the dataset. The various variables are :-
+1.  fixed.acidity        
+2.  volatile.acidity
+3.  citric.acid          
+4.  residual.sugar
+5.  chlorides             
+6.  free.sulfur.dioxide   
+7.  total.sulfur.dioxide  
+8.  density         
+9.  pH                    
+10. sulphates
+11. alcohol              
+12. quality
+
+
+### What is/are the main feature(s) of interest in your dataset?
+
+The main feature of interest in the dataset is the quality of the red wines. What goes into makeing the wine quality good is interesting to analyze.
+
+### What other features in the dataset do you think will help support your \investigation into your feature(s) of interest?
+
+Features like acid content, sulphur dioxide content,alcohol percent, sulphates, chlorides, residual sugar contribute towards the quality of wines. Analyzing them will be of interest. 
+
+
+### Did you create any new variables from existing variables in the dataset?
+
+Yes, two new variables were created. They are :-
+
+1. free.sulfur.dioxide.proportion
+2. alcohol.range
+
+The first variable is the proportion of free SO2 to the total SO2.
+The second variable was created to group alcohol percents in 3 ranges.
+
+### Of the features you investigated, were there any unusual distributions?Did you perform any operations on the data to tidy, adjust, or change the form of the data? If so, why did you do this?
+
+The alcohol percent graph had a large peak at a particular bin. Most of the graphs followed a normal distribution, while some were skewed positively. 
+The dataset is a tidy dataset and therefore no cleaning was required. In some of the earlier plots generated, values above the 95th percentile were ignored, to elimiate the long tail in the plots.
+
+
+# Bivariate Plots Section
+
+Plotting the graphs between the variables of the dataframe against each other using ggpairs function, provides us with the pearson correlation coefficient 'r' between the variables.
+
+```{r,echo=FALSE, message=FALSE}
+red.wine$X<- NULL
+ggpairs(red.wine)
+
+```
+
+From the above correlation chart it seems like the quality of wine is correlated to varaibles like citric.acid,volatile.acidity,alcohol etc. Box plots have been created to understand these correlations. Quality has been converted to a categorical variable.
+
+```{r,echo=FALSE,warning=FALSE, message=FALSE}
+red.wine$quality<-factor(red.wine$quality)
+
+ggplot(aes(x=quality,y=fixed.acidity),data=red.wine)+
+  geom_boxplot()+
+  coord_cartesian(ylim = c(6,14))+
+  ylab('Fixed Acidity (g / dm^3)')+
+  xlab('Quality')
+
+by(red.wine$fixed.acidity,red.wine$quality,summary)
+```
+
+From the box plots for fixed acidity, we can see that the median value ranges above 8 g/dm^3 for high quality wines.The increase in fixed acidity is not too significant between the lower quality and higher quality. The mean for most of the qualities ranges above 8 g/dm^3. Note that the fixed acidity variable actually records the tartaric acid content in wine.
+
+```{r,echo=FALSE,warning=FALSE, message=FALSE}
+ggplot(aes(x=quality,y=volatile.acidity),data=red.wine)+
+  geom_boxplot()+
+  ylab('Volatile Acidity (g / dm^3)')+
+  xlab('Quality')
+
+
+by(red.wine$volatile.acidity,red.wine$quality,summary)
+```
+
+Volatile acidity seems to have a negative effect on quality. High quality alcohols have a low volatile acidity content.
+
+```{r,echo=FALSE,warning=FALSE}
+ggplot(aes(x=quality,y=citric.acid),data=red.wine)+
+  geom_boxplot()+
+  ylab('Citric Acid (g / dm^3)')+
+  xlab('Quality')
+
+
+ggplot(aes(x=quality,y=citric.acid),data=red.wine)+
+  geom_violin(fill='red')+
+  ylab('Citric Acid (g / dm^3)')+
+  xlab('Quality')
+
+
+by(red.wine$citric.acid,red.wine$quality,summary)
+```
+
+The presence of citric acid in the wine seems to improve the quality. There is a significant increase in the citric acid content as wine quality increases. Citric acid is one of the fixed acids found in wines. Although the fixed acid, tartaric acid doesnt play a significant role in quality, the fixed acid, citric acid improves the quality significantly. The violin plot shows the count at various levels of citric acid content based on quality.
+
+```{r,echo=FALSE,warning=FALSE, message=FALSE}
+ggplot(aes(x=quality,y=density),data=red.wine)+
+  geom_boxplot()+
+  ylab('Density (g / cm^3)')+
+  xlab('Quality')
+
+
+by(red.wine$density,red.wine$quality,summary)
+```
+
+The mean and median density over quality doesn't show a significant decrease.
+
+```{r,echo=FALSE,warning=FALSE, message=FALSE}
+ggplot(aes(x=quality,y=sulphates),data=red.wine)+
+  geom_boxplot()+
+  ylim(0.3,1.25)+
+  ylab('Sulphates (g / dm^3)')+
+  xlab('Quality')
+
+by(red.wine$sulphates,red.wine$quality,summary)
+
+ggplot(aes(x=quality,y=free.sulfur.dioxide),data=red.wine)+
+  geom_boxplot()+
+  ylim(0,60)+
+  ylab('Free Sulphut dioxide (mg / dm^3)')+
+  xlab('Quality')
+
+
+
+by(red.wine$free.sulfur.dioxide,red.wine$quality,summary)
+```
+
+The sulphates level seems to increase with quality.The mean free sulphur dioxide presence in high quality wines shows a decline. 
+
+```{r,echo=FALSE,warning=FALSE}
+ggplot(aes(x=quality,y=alcohol),data=red.wine)+
+  geom_boxplot()+
+  ylab('Alcohol (% by volume)')+
+  xlab('Quality')
+
+```
+
+Finally we find the alcohol percent is higher in good quality wines.
+
+From these box plots, we find that citric acid, volatile acids,sulphates, alcohol content in wines affect quality.
+
+Lets look at some of the other relationships among variables.
+
+```{r,echo=FALSE,warning=FALSE}
+
+x<-subset(red.wine,citric.acid< quantile(citric.acid,0.95))
+
+
+p1<- ggplot(aes(x=citric.acid,y=fixed.acidity),data=x)+
+  geom_point(color='green')+
+  geom_line(stat = 'summary',fun.y= mean,color='blue')+
+  ylab('Fixed Acidity (g / dm^3)')+
+  xlab('Citric Acid (g / dm^3)')
+
+
+p2<-ggplot(aes(x=citric.acid,y=volatile.acidity),data=x)+
+  geom_point(color='green')+
+  geom_line(stat = 'summary',fun.y= mean,color='blue')+
+  ylab('Volatile Acidity (g / dm^3)')+
+  xlab('Citric Acid (g / dm^3)')
+
+grid.arrange(p1,p2,ncol=1)
+
+```
+
+From the above plots we can see the positive correlation between citric acid and fixed acids and the negative correlation between citric acid and volatile acids. The mean fixed acidity and volatile acidity increases and decreases respectively as citric acid content increases.
+
+There is a significant negative correlation between citric acid content and pH. This is because as acid contents increases the acidity of wines increases, this causes the pH value to drop. Remember the lower the pH value, the more acidic a wine is.
+
+```{r,echo=FALSE,warning=FALSE, message=FALSE}
+
+x<-subset(red.wine,citric.acid< quantile(citric.acid,0.95))
+
+ggplot(aes(x=citric.acid,y=sulphates),data=x)+
+  geom_point(alpha=1/3,color='black')+
+  geom_line(stat = 'summary',fun.y= median, aes(color='50th Percentile'),size = 1.2)+
+  geom_line(stat = 'summary',fun.y=quantile,fun.args=list(probs=0.75),aes(color='75th Percentile'),size=1.2)+
+  geom_line(stat = 'summary',fun.y=quantile,fun.args=list(probs=0.90),aes(color='90th Percentile'),size=1.2)+
+geom_smooth(color='yellow')+
+labs(colour = "Percentile")+
+  ylab('Sulphates (g / dm^3)')+
+  xlab('Citric Acid (g / dm^3)')
+  
+
+```
+
+Although at lower levels of citric acid(under 0.2 g/dm^3) the sulphates level remains almost constant at citric acid levels above 0.2 g/dm^3 there is an increase in sulphates level. This can be infered from the yellow geom_smooth line.Both sulpahtes level and citric acid levels affect quality, so it will be interesting to see what happens when both are plotted against quality.
+
+```{r,echo=FALSE,warning=FALSE}
+
+x<-subset(red.wine,sulphates< quantile(sulphates,0.90))
+
+ggplot(aes(x=sulphates,y=free.sulfur.dioxide),data=x)+
+  geom_point()+
+  scale_x_continuous(breaks = seq(0.4,1,0.1),limits = c(0.4,1))+
+  geom_line(stat='summary',fun.y=mean,color='red',size=1)+
+  ylab('Free Sulphur dioxide (mg / dm^3)')+
+  xlab('Sulphates (g / dm^3)')
+
+ggplot(aes(x=sulphates,y=total.sulfur.dioxide),data=x)+
+  geom_point()+
+  scale_x_continuous(breaks = seq(0.4,1,0.1),limits = c(0.4,1))+
+  geom_line(stat='summary',fun.y=mean,color='red',size=1)+
+  ylab('Total Sulphur dioxide (mg / dm^3)')+
+  xlab('Sulphates (g / dm^3)')
+
+```
+
+Free sulphur dioxide and total sulphur dioxide content aren't affected by sulphates. This is strange because sulphates is a wine additive which can contribute to sulfur dioxide gas (S02) levels.
+
+Citric acid content, sulphates level, alcohol percent and volatile acidity play a major role in wine quality.
+
+# Bivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the investigation. How did the feature(s) of interest vary with other features in the dataset?
+
+Citric acid content, sulphates level, alcohol percent and volatile acidity play a major role in wine quality. Citric acid content increases in high quality alcohols. Volatile acidity level is found to be less in high quality alcohols. Sulphates level are higher in good quality alcohols. Good quality alcohols also tend have a higher alcohol content.
+
+### Did you observe any interesting relationships between the other features (not the main feature(s) of interest)?
+
+The sulphates level doesn't seem to affect the free sulphur diioxide or total sulphur dioxide levels, which reveals an interesting relationship.
+
+### What was the strongest relationship you found?
+
+The quality of wines is strongly related to the alcohol percent. Citric acid content is positively correlated while volatile acidity is negatively correlated to quality, but these relationships are not as strong as the one between quality and alcohol.
+
+
+# Multivariate Plots Section
+
+The new variable 'alcohol.range' created is a categorical variable splitting the alcohol percents into 3 ranges, 8-10,10-12,12-15.
+
+
+```{r,echo=FALSE,warning=FALSE}
+ggplot(aes(x=alcohol.range,y=citric.acid),data=red.wine)+
+  geom_boxplot(aes(fill=quality))+
+  ylab('Citric Acid (g / dm^3)')+
+  xlab('Alcohol Range (% by volume)')
+```
+```{r,echo=FALSE,warning=FALSE}
+ggplot(aes(x=alcohol.range,y=sulphates),data=red.wine)+
+  geom_boxplot(aes(fill=quality))+
+  ylim(0.25,1.25)+
+  ylab('Sulpahtes(g / dm^3)')+
+  xlab('Alcohol Range (% by volume)')
+
+ggplot(aes(x=alcohol.range,y=volatile.acidity),data=red.wine)+
+  geom_boxplot(aes(fill=quality))+
+  ylab('Volatile Acidity (g / dm^3)')+
+  xlab('Alcohol Range (% by volume)')
+```
+
+The above plots shows the citric acid,volatile acids,sulphates content in various quality wines and alcohol ranges. Looking at the median lines in the box plots for the variables, in higher alcohol content wines(12-15%), the citric acid levels ans sulphates level are more while the volatile acidity is less for high quality wines.
+
+```{r,echo=FALSE,warning=FALSE}
+ggplot(aes(x=citric.acid,y=volatile.acidity),data=red.wine)+
+  geom_point(color='red')+
+  geom_line(stat='summary',fun.y=mean)+
+  facet_wrap(~quality)+
+  xlab('Citric Acid (g / dm^3)')+
+  ylab('Volatile Acidity (g / dm^3)')
+```
+
+Looking at the citric acid vs volatile acidity plot faceted over wine quality, we find that as citric acid content increases volatile acidity decreases. This is evident in all quality alcohols, but in high quality alcohols between 7-8 the presence of volatile acids dips well below 0.4 g/dm^3.
+
+
+```{r,echo=FALSE,warning=FALSE}
+ggplot(aes(x=alcohol,y=sulphates),data=red.wine)+
+  geom_point(aes(color=quality))+
+  scale_x_continuous(breaks=seq(1,15,0.5))+
+  scale_color_brewer(type='seq' , palette = "BuGn")+
+  xlab('Alcohol Percent (% by volume)')+
+  ylab('Sulphates (g / dm^3)')
+  
+```
+
+The above plot details the relationship between alcohol content and sulphates level over various quality levels. Higher quality wines lie in the higher alcohol ranges and tend to have higher sulphates level.
+
+```{r,echo=FALSE,warning=FALSE}
+ggplot(aes(x=sulphates,y=volatile.acidity),data=red.wine)+
+  geom_point(aes(color=quality))+
+  scale_x_continuous(breaks=seq(0,1,0.1),limits = c(0.3,1))+
+   scale_color_brewer(type='seq' , palette = "BuGn")+
+  xlab('Sulpahtes (g / dm^3)')+
+  ylab('Volatile Acidity (g / dm^3)')
+```
+
+The above plot seems to show that good quality alcohols at higher sulphates level have lower volatile acidity.
+
+```{r,echo=FALSE,warning=FALSE}
+ggplot(aes(x=citric.acid,y=sulphates),data=red.wine)+
+  geom_point(aes(color=quality))+
+  scale_color_brewer(type='seq' , palette = "BuGn")+
+  xlab('Citric Acid (g / dm^3)')+
+  ylab('Sulpahtes (g / dm^3)')
+```
+
+The above plot shows the sulphates vs citric acid levels. Good quality alcohols tend to have a higher sulphates level at various citric acid levels.
+
+
+```{r,echo=FALSE,warning=FALSE}
+
+ggplot(aes(x=alcohol,y=volatile.acidity),data=red.wine)+
+  geom_point(aes(color=quality))+
+  scale_color_brewer(type='seq' , palette = "BuGn")+
+  xlab('Alcohol Percent (% by volume)')+
+  ylab('Volatile Acidity (g / dm^3)')
+
+```
+
+An increase in alcohol percent shows a decrease in volatile acidity in good quality alcohols.
+
+
+Using citric acid content, volatile acidity, sulphates, quality a linear model has been created.
+```{r,echo=FALSE,warning=FALSE}
+red.wine <- read.csv('wineQualityReds.csv')
+
+m1 <- lm((I(red.wine$quality) ~ I(red.wine$alcohol)), data = red.wine)
+m2 <- update(m1, ~. + red.wine$citric.acid)
+m3 <- update(m2, ~. + red.wine$sulphates)
+m4 <- update(m3, ~. + red.wine$volatile.acidity)
+mtable(m1, m2, m3, m4)
+
+```
+
+The variables in this linear model can account for 33.6% of the variance in the quality of wines.
+
+# Multivariate Analysis
+
+
+### Talk about some of the relationships you observed in this part of the investigation. Were there features that strengthened each other in terms of looking at your feature(s) of interest?
+
+The plots above affirmed the strong relationship between quality and other variables like citric acid, volatile acidity , sulphates and alcohol percent. High quality alcohols showed a high citric acid as well as sulphates content. Volatile acidity was high in lower quality alcohols. Wines with higher alcohol percent also showed higher sulphates, citric acid content.
+
+
+### Were there any interesting or surprising interactions between features?
+Volatile acidity showed a decline in all quality alcohols as citric acid content increased, with the difference being the percent of drop. The drop being higher in high quality alcohols. This was an interesting interaction.
+
+### OPTIONAL: Did you create any models with your dataset? Discuss the strengths and limitations of your model.
+
+Yes, i created a linear model between quality and alcohol percent.The variables in this linear model can account for 33.6% of the variance in the quality of wines.The R^2 value improved when volatile acidity was included.
+Only 33.6% of the variance could be explained by this model.
+
+
+# Final Plots and Summary
+
+### Plot One
+```{r,echo=FALSE,warning=FALSE}
+ggplot(aes(x=as.factor(quality),y=citric.acid),data=red.wine)+
+  geom_boxplot()+
+  xlab('Quality (g / dm^3)')+
+  ylab('Citric Acid (g / dm^3)')+
+  ggtitle('Quality vs. Citric Acid Boxplots')+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+### Description One
+
+The median citric acid values increases with quality. This can be infered from the above box plots. Similar box plots for other variables highlight the variance with quality.
+
+### Plot Two
+```{r,echo=FALSE,warning=FALSE}
+
+ggplot(aes(x=citric.acid,y=sulphates),data=red.wine)+
+  geom_point(aes(color=as.factor(quality)))+
+  scale_color_brewer(type='seq' , palette = "BuGn")+
+  xlab('Citric Acid (g / dm^3)')+
+  ylab('Sulphates (g / dm^3)')+
+  ggtitle('Citric acid vs Sulphates by Quality')+
+  theme(plot.title = element_text(hjust = 0.5))
+ 
+```
+
+### Description Two
+
+The citric acid vs sulphates graph is an important graph as they are two of the factors apart from alcohol percent that have a positive correlation with the quality. In high quality alcohols we can see an increased citric acid vs sulphates content.
+
+### Plot Three
+
+```{r,echo=FALSE,warning=FALSE}
+
+ggplot(aes(x=alcohol,y=volatile.acidity),data=red.wine)+
+  geom_point(aes(color=as.factor(quality)))+
+  scale_color_brewer(type='seq' , palette = "BuGn")+
+  xlab('Alcohol percent (% by volume)')+
+  ylab('Volatile Acidity (g / dm^3)')+
+  ggtitle('Alcohol percent vs. Volatile Acidity over Quality')+
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+### Description Three
+
+This plot highlightes the importance of volatile acidity and alcohol percent in accessing quality. Wines with higher percent of alcohol are usually good quality alcohols with low volatile acidity.
+
+# Reflection
+
+The dataset containes information about 1599 red wines across 13 variables from the year 2009.The goal was to find how the quality of wines vary with variables.  Various plots were generated for the above purpose. Finally a linear model was created.Only 33.6% of the variance could be explained by the model created. 
+
+It took a while during analysis to determine which variables to compare.After quiet a while I was able to seperate the variables that affected the quality the most. There some confusion on which plots to use to best highlight the difference.Also I felt that the number of entries in the dataset could have been more for better prediction. The count of wines of quality 5 & 6 are higher compared to the rest. A close to even distribution of quality would have helped in better analysis.
+
